@@ -78,7 +78,7 @@ func (exps Expressions) Read(val interface{}) (interface{}, error) {
 	var err error
 
 	for i, exp := range exps {
-		ret, err = exp.run(ret)
+		ret, err = exp.read(ret)
 		if err != nil {
 			return nil, err
 		}
@@ -160,19 +160,19 @@ func (exps Expressions) ReadBool(val interface{}) (bool, error) {
 	return ret, nil
 }
 
-func (exp *Expression) run(v *reflect.Value) (*reflect.Value, error) {
+func (exp *Expression) read(v *reflect.Value) (*reflect.Value, error) {
 	switch exp.Type {
 	case Property:
-		return exp.runProperty(v)
+		return exp.readProperty(v)
 	case Indexing:
-		return exp.runIndexing(v)
+		return exp.readIndexing(v)
 	}
 
 	return nil, fmt.Errorf("unknow expression type %v", exp.Type)
 }
 
-func (exp *Expression) runIndexing(v *reflect.Value) (*reflect.Value, error) {
-	arr, err := exp.runProperty(v)
+func (exp *Expression) readIndexing(v *reflect.Value) (*reflect.Value, error) {
+	arr, err := exp.readProperty(v)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +189,7 @@ func (exp *Expression) runIndexing(v *reflect.Value) (*reflect.Value, error) {
 	return nil, fmt.Errorf("field %s is not array or slice : %s", exp.Name, arr.Kind())
 }
 
-func (exp *Expression) runProperty(v *reflect.Value) (*reflect.Value, error) {
+func (exp *Expression) readProperty(v *reflect.Value) (*reflect.Value, error) {
 	name := exp.Name
 	v = indirecte(v)
 	typ := v.Type()
