@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var reProperty = regexp.MustCompile(`^(\w+)`)
+var reProperty = regexp.MustCompile(`^(\w+)$`)
 var reIndexing = regexp.MustCompile(`^(\w+)\[(\d+)\]$`)
 
 // MustParse : panic if given expressions could not be parsed
@@ -31,7 +31,7 @@ func Parse(exp string) (Expressions, error) {
 			name := xs[1]
 			ind, err := strconv.Atoi(xs[2])
 			if err != nil {
-				return nil, fmt.Errorf("Invalid expression %s : %s", t, err)
+				return nil, fmt.Errorf(`Invalid expression "%s" : %s`, t, err)
 			}
 			exps = append(exps, &Expression{Type: Indexing, Name: name, Index: ind})
 			continue
@@ -43,7 +43,7 @@ func Parse(exp string) (Expressions, error) {
 			continue
 		}
 
-		return nil, fmt.Errorf("Invalid expression %s", t)
+		return nil, fmt.Errorf(`Invalid expression "%s"`, t)
 	}
 
 	return exps, nil

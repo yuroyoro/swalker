@@ -182,6 +182,7 @@ func TestReadHash(t *testing.T) {
 	if err.Error() != "field bar3 is nil" {
 		t.Fatalf("unexpected error : [%s]", err)
 	}
+
 	// ReadString("foo[0].bar1.hoge") -> string
 	str, err := ReadString("foo[0].bar1.hoge", obj)
 	if err != nil {

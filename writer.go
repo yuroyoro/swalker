@@ -60,12 +60,8 @@ func (exp *Expression) writeIndexing(obj *reflect.Value, val interface{}) error 
 			return fmt.Errorf("field %s len %d : index %d is out of range", exp.Name, arr.Len(), exp.Index)
 		}
 		dst := arr.Index(exp.Index)
-		if dst.CanSet() == false {
-			return fmt.Errorf("cannot write ot field %s[%d]", exp.Name, exp.Index)
-		}
-		v := reflect.ValueOf(val)
-		dst.Set(v)
-		return nil
+
+		return exp.set(&dst, val)
 	}
 
 	return fmt.Errorf("field %s is not array or slice : %s", exp.Name, arr.Kind())
@@ -84,12 +80,7 @@ func (exp *Expression) writeProperty(obj *reflect.Value, val interface{}) error 
 				return fmt.Errorf("%s is an unexported field of struct type %s", name, typ)
 			}
 
-			if field.CanSet() == false {
-				return fmt.Errorf("cannot write ot field %s[%d]", exp.Name, exp.Index)
-			}
-			vv := reflect.ValueOf(val)
-			field.Set(vv)
-			return nil
+			return exp.set(&field, val)
 		}
 		return fmt.Errorf("%s is not a field of struct type %s", name, typ)
 	case reflect.Map:
@@ -102,4 +93,38 @@ func (exp *Expression) writeProperty(obj *reflect.Value, val interface{}) error 
 		}
 	}
 	return fmt.Errorf("can't evaluate field %s in type %s (%s)", name, typ, v.Kind())
+}
+
+func (exp *Expression) set(dst *reflect.Value, val interface{}) error {
+
+	if dst.CanSet() == false {
+		return fmt.Errorf("cannot write ot field %s[%d]", exp.Name, exp.Index)
+	}
+
+	v := reflect.ValueOf(val)
+
+	if dst.Kind() == reflect.Interface {
+		v = *copy(dst, &v)
+	}
+
+	if dst.Type().AssignableTo(v.Type()) == false {
+		switch exp.Type {
+		case Indexing:
+			return fmt.Errorf("cannot write %s to field %s[%d](%s) : %v", v.Type(), exp.Name, exp.Index, dst.Type(), val)
+		case Property:
+			return fmt.Errorf("cannot write %s to field %s(%s) : %v", v.Type(), exp.Name, dst.Type(), val)
+		}
+	}
+	dst.Set(v)
+	return nil
+}
+
+func copy(dst, v *reflect.Value) *reflect.Value {
+	if v.CanAddr() == false {
+		copy := reflect.New(dst.Type()).Elem()
+		copy.Set(*v)
+		return &copy
+	}
+
+	return v
 }
